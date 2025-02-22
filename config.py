@@ -22,12 +22,15 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    CORS_ORIGINS = ['http://localhost:3000']
+    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:8080']
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
     SSL_REDIRECT = True
-    CORS_ORIGINS = [os.environ.get('ALLOWED_ORIGIN', 'https://your-domain.com')]
+    CORS_ORIGINS = [
+        os.environ.get('ALLOWED_ORIGIN', 'https://your-domain.com'),
+        'http://localhost:8080',  # Temporarily allow localhost for testing
+    ]
     
     # Production security settings
     SESSION_COOKIE_SECURE = True
@@ -36,7 +39,7 @@ class ProductionConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     TESTING = True
-    CORS_ORIGINS = ['http://localhost:3000']
+    CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:8080']
 
 config = {
     'development': DevelopmentConfig,
