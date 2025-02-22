@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: semental-api
+    env: python
+    runtime: python3.11
+    buildCommand: |
+      apt-get update && apt-get install -y git-lfs
+      git lfs install
+      git lfs pull
+      pip install -r requirements.txt
+      mkdir -p /opt/render/project/src/model
+      cp model/* /opt/render/project/src/model/
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: TIMEOUT
+        value: 30
+      - key: LOG_LEVEL
+        value: info
+      - key: PORT
+        value: 10000
+      - key: MODEL_PATH
+        value: /opt/render/project/src/model/model.mdl
+      - key: WORDS_PATH
+        value: /opt/render/project/src/words.txt
+    disk:
+      name: model
+      mountPath: /opt/render/project/src/model
+      sizeGB: 1 
