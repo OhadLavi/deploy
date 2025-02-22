@@ -12,18 +12,43 @@ services:
         FILEID=$1
         FILENAME=$2
         
+        echo "Attempting to download file ID: ${FILEID} to ${FILENAME}"
+        
         # Get the confirmation token
+        echo "Getting confirmation token..."
         CONFIRM=$(curl -sL "https://drive.google.com/uc?export=download&id=${FILEID}" | grep -o 'confirm=[^&]*' | cut -d'=' -f2)
+        echo "Confirmation token: ${CONFIRM}"
         
         # Download with confirmation token
-        curl -L -o "$FILENAME" "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILEID}"
+        echo "Downloading with token..."
+        curl -L -v -o "$FILENAME" "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILEID}"
+        
+        # Check file size
+        if [ -f "$FILENAME" ]; then
+          echo "File downloaded. Size: $(ls -lh $FILENAME)"
+        else
+          echo "File not found after download!"
+        fi
       }
+      
+      echo "Current directory: $(pwd)"
+      echo "Listing /opt/render/project/src/model before downloads:"
+      ls -la /opt/render/project/src/model
       
       echo "Downloading syn1neg file..."
       download_from_gdrive "1ubP3YTB_9CuZ84Iey0WuR8Mru-oDtD3N" "/opt/render/project/src/model/model.mdl.syn1neg.npy"
       
       echo "Downloading vectors file..."
       download_from_gdrive "1pB9Ht2owUreXjejfwoIrsNQiFcdMEVZf" "/opt/render/project/src/model/model.mdl.wv.vectors.npy"
+      
+      echo "Listing local model directory:"
+      ls -la model/
+      
+      echo "Copying model files..."
+      cp -v model/* /opt/render/project/src/model/
+      
+      echo "Final contents of /opt/render/project/src/model:"
+      ls -la /opt/render/project/src/model
       
       # Verify files exist and have size
       if [ ! -s /opt/render/project/src/model/model.mdl.syn1neg.npy ]; then
@@ -37,7 +62,6 @@ services:
       fi
       
       echo "Model files downloaded successfully"
-      cp model/* /opt/render/project/src/model/
     startCommand: gunicorn wsgi:app
     envVars:
       - key: PYTHON_VERSION
