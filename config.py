@@ -4,7 +4,7 @@ from datetime import timedelta
 class BaseConfig:
     # Base configuration
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
-    MODEL_PATH = os.path.join('/opt/render/project/src/model', 'model.mdl')
+    MODEL_PATH = os.path.join('/opt/render/project/src/model', 'model_small')
     WORDS_PATH = os.path.join(os.path.dirname(__file__), 'words.txt')
     
     # Rate limiting
@@ -22,19 +22,17 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
-    CORS_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
+    CORS_ORIGINS = ['http://localhost:3000']
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
+    SSL_REDIRECT = True
     CORS_ORIGINS = [os.environ.get('ALLOWED_ORIGIN', 'https://your-domain.com')]
     
     # Production security settings
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Strict'
-    
-    # SSL/HTTPS
-    SSL_REDIRECT = True
 
 class TestingConfig(BaseConfig):
     TESTING = True

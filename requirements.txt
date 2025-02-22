@@ -10,4 +10,5 @@ gunicorn==21.2.0
 redis==5.0.1
 pyOpenSSL==24.0.0
 sentry-sdk[flask]==1.40.0
-prometheus-flask-exporter==0.23.0 
+prometheus-flask-exporter==0.23.0
+scikit-learn==1.4.0 

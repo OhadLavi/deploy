@@ -64,9 +64,12 @@ def load_words():
 
 # Load the Word2Vec model and filter Hebrew words
 try:
-    model = gensim.models.Word2Vec.load(app.config['MODEL_PATH'])
+    model = gensim.models.KeyedVectors.load_word2vec_format(
+        app.config['MODEL_PATH'] + '.bin',
+        binary=True
+    )
     hebrew_words = load_words()
-    hebrew_vocab = [word for word in hebrew_words if word in model.wv]
+    hebrew_vocab = [word for word in hebrew_words if word in model]
     if not hebrew_vocab:
         raise ValueError("No Hebrew words found in both file and model vocabulary")
 except Exception as e:
@@ -101,20 +104,14 @@ def index():
         ]
     })
 
-# Global secret words for daily and casual modes
-GAME_START_DATE = datetime.date(2025, 2, 22)  # Game #1 starts on this date
+# Get the reference date for daily game numbering
+GAME_START_DATE = datetime.date(2024, 2, 21)  # When the game was launched
 
 def get_daily_secret():
-    # Calculate game number as days since reference date
+    """Get the daily secret word based on the date."""
     today = datetime.date.today()
-    game_number = (today - GAME_START_DATE).days + 1  # +1 so first game is #1 not #0
-    
-    # Use game number as seed for consistent daily word
-    random.seed(game_number)
-    secret = random.choice(hebrew_vocab)
-    print(secret)
-    random.seed()  # Reset the seed
-    return secret
+    days_since_start = (today - GAME_START_DATE).days
+    return hebrew_vocab[days_since_start % len(hebrew_vocab)]
 
 daily_secret = get_daily_secret()
 casual_secret = random.choice(hebrew_vocab)
@@ -132,14 +129,14 @@ def get_similarity_and_rank(secret, guess):
     if guess == secret:
         return 100.0, 1000  # The target word always gets 100% similarity and rank 1000
     
-    if not is_hebrew_word(guess) or guess not in model.wv:
+    if not is_hebrew_word(guess) or guess not in model:
         return None, None
         
     # Cosine similarity (typically between -1 and 1) scaled to 0-100.
-    similarity = model.wv.similarity(secret, guess) * 100
+    similarity = model.similarity(secret, guess) * 100
     
     # Get similar words but filter to only Hebrew words and sort by similarity
-    similar_words = [(word, sim) for word, sim in model.wv.most_similar(secret, topn=2000) 
+    similar_words = [(word, sim) for word, sim in model.most_similar(secret, topn=2000) 
                     if is_hebrew_word(word)][:1000]
     
     # Find the word's position in the sorted list
@@ -170,7 +167,7 @@ def get_game_stats(secret):
     - The least similar word (rank 1)
     """
     # Get similar words but filter to only Hebrew words and sort by similarity
-    similar_words = [(word, sim) for word, sim in model.wv.most_similar(secret, topn=2000) 
+    similar_words = [(word, sim) for word, sim in model.most_similar(secret, topn=2000) 
                     if is_hebrew_word(word)][:1000]
     
     # Calculate game number as days since reference date
@@ -219,7 +216,7 @@ def guess_word(mode):
 
     secret = daily_secret if mode == "daily" else casual_secret
 
-    if guess not in model.wv:
+    if guess not in model:
         return jsonify({"valid": False, "message": "Word not found in dictionary"}), 400
 
     similarity, rank = get_similarity_and_rank(secret, guess)

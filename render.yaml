@@ -7,90 +7,17 @@ services:
       pip install -r requirements.txt
       mkdir -p /opt/render/project/src/model
       
-      # Function to download large files from Google Drive
-      download_from_gdrive() {
-        FILEID=$1
-        FILENAME=$2
-        
-        echo "Attempting to download file ID: ${FILEID} to ${FILENAME}"
-        
-        # First attempt - get the warning page
-        echo "Getting warning page..."
-        RESPONSE=$(curl -s -L -c cookies.txt "https://drive.google.com/uc?export=download&id=${FILEID}")
-        
-        # Extract confirmation code from the warning page
-        CONFIRM=$(echo "$RESPONSE" | grep -o 'confirm=[^&]*' | cut -d'=' -f2)
-        
-        if [ -z "$CONFIRM" ]; then
-          echo "No confirmation code found, trying direct download..."
-          # Try direct download if no confirmation needed
-          curl -L -b cookies.txt -o "$FILENAME" "https://drive.google.com/uc?export=download&id=${FILEID}"
-        else
-          echo "Confirmation code found: ${CONFIRM}"
-          # Download with confirmation
-          curl -L -b cookies.txt -o "$FILENAME" "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILEID}"
-        fi
-        
-        # Check file size and content
-        if [ -f "$FILENAME" ]; then
-          SIZE=$(ls -lh "$FILENAME" | awk '{print $5}')
-          echo "File downloaded. Size: $SIZE"
-          
-          # Check if the file contains HTML (indicating an error page)
-          if grep -q "<!DOCTYPE html>" "$FILENAME"; then
-            echo "Error: Downloaded file appears to be HTML instead of the expected file"
-            cat "$FILENAME"  # Show the HTML content for debugging
-            return 1
-          fi
-        else
-          echo "Error: File not found after download!"
-          return 1
-        fi
-      }
+      # Copy the model files
+      echo "Copying model files..."
+      cp -v model/model_small.bin /opt/render/project/src/model/
       
-      echo "Current directory: $(pwd)"
-      echo "Contents of current directory:"
-      ls -la
-      
-      echo "Contents of model directory:"
-      ls -la model/
-      
-      # First copy the main model file
-      echo "Copying main model file..."
-      cp -v model/model.mdl /opt/render/project/src/model/
-      
-      echo "Downloading syn1neg file..."
-      if ! download_from_gdrive "1ubP3YTB_9CuZ84Iey0WuR8Mru-oDtD3N" "/opt/render/project/src/model/model.mdl.syn1neg.npy"; then
-        echo "Failed to download syn1neg file"
+      # Verify files exist and have size
+      if [ ! -s /opt/render/project/src/model/model_small.bin ]; then
+        echo "Error: model_small.bin is missing or empty"
         exit 1
       fi
       
-      echo "Downloading vectors file..."
-      if ! download_from_gdrive "1pB9Ht2owUreXjejfwoIrsNQiFcdMEVZf" "/opt/render/project/src/model/model.mdl.wv.vectors.npy"; then
-        echo "Failed to download vectors file"
-        exit 1
-      fi
-      
-      echo "Final contents of /opt/render/project/src/model:"
-      ls -la /opt/render/project/src/model
-      
-      # Verify all required files exist and have size
-      if [ ! -s /opt/render/project/src/model/model.mdl ]; then
-        echo "Error: Main model.mdl file is missing or empty"
-        exit 1
-      fi
-      
-      if [ ! -s /opt/render/project/src/model/model.mdl.syn1neg.npy ]; then
-        echo "Error: syn1neg file is empty or missing"
-        exit 1
-      fi
-      
-      if [ ! -s /opt/render/project/src/model/model.mdl.wv.vectors.npy ]; then
-        echo "Error: vectors file is empty or missing"
-        exit 1
-      fi
-      
-      echo "All model files are present and have size"
+      echo "Model files copied successfully"
     startCommand: gunicorn wsgi:app
     envVars:
       - key: PYTHON_VERSION
@@ -110,7 +37,7 @@ services:
       - key: PORT
         value: 10000
       - key: MODEL_PATH
-        value: /opt/render/project/src/model/model.mdl
+        value: /opt/render/project/src/model/model_small
       - key: WORDS_PATH
         value: /opt/render/project/src/words.txt
     disk:
