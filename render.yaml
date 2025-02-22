@@ -4,11 +4,11 @@ services:
     env: python
     runtime: python3.11
     buildCommand: |
-      apt-get update && apt-get install -y git-lfs
-      git lfs install
-      git lfs pull
       pip install -r requirements.txt
       mkdir -p /opt/render/project/src/model
+      # Download model files from cloud storage
+      curl -L "$MODEL_SYN1NEG_URL" -o /opt/render/project/src/model/model.mdl.syn1neg.npy
+      curl -L "$MODEL_VECTORS_URL" -o /opt/render/project/src/model/model.mdl.wv.vectors.npy
       cp model/* /opt/render/project/src/model/
     startCommand: gunicorn wsgi:app
     envVars:
@@ -32,6 +32,10 @@ services:
         value: /opt/render/project/src/model/model.mdl
       - key: WORDS_PATH
         value: /opt/render/project/src/words.txt
+      - key: MODEL_SYN1NEG_URL
+        value: https://limewire.com/d/1e2cf2e0-bf3b-4fab-8da9-b756d6c3c9c1#RbamU0h0JItDrUm8QzWKyEIxEAmRyF99-vO6Czi3csE
+      - key: MODEL_VECTORS_URL
+        value: https://limewire.com/d/1d7b3eb9-ad22-457a-a3dd-71ef283d9d4f#yB0W2QmwEfeLWAE_YC7C9tTl_TLEqg1vU0ShPwQps14
     disk:
       name: model
       mountPath: /opt/render/project/src/model
