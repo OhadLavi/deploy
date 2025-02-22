@@ -35,10 +35,14 @@ if not app.debug:
 
 # Initialize CORS with all origins allowed
 CORS(app, 
-    resources={r"/api/*": {"origins": "*"}},
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-    methods=["GET", "POST", "OPTIONS"]
+    resources={r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin"],
+        "expose_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 120  # Cache preflight response for 2 minutes
+    }},
 )
 
 # Initialize Talisman for security headers
