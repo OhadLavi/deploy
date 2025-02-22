@@ -33,8 +33,13 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info('Semental startup')
 
-# Initialize CORS
-CORS(app, origins=app.config['CORS_ORIGINS'])
+# Initialize CORS with all origins allowed
+CORS(app, 
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+    methods=["GET", "POST", "OPTIONS"]
+)
 
 # Initialize Talisman for security headers
 Talisman(app, 
