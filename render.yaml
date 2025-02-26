@@ -5,47 +5,20 @@ services:
     runtime: python3.11
     buildCommand: |
       pip install -r requirements.txt
-      
-      # Create necessary directories
       mkdir -p /opt/render/project/src/model
       
-      # Copy the model files with verbose output
-      echo "Current directory contents:"
-      ls -la
-      
+      # Copy the model files
       echo "Copying model files..."
-      if [ -f model.mdl ]; then
-        cp -v model.mdl /opt/render/project/src/model/model.mdl
-      else
-        echo "Error: model.mdl not found in current directory"
-        exit 1
-      fi
-      
-      if [ -f words.txt ]; then
-        cp -v words.txt /opt/render/project/src/words.txt
-      else
-        echo "Error: words.txt not found in current directory"
-        exit 1
-      fi
+      cp -v model/model_small.bin /opt/render/project/src/model/
       
       # Verify files exist and have size
-      echo "Verifying copied files..."
-      if [ ! -s /opt/render/project/src/model/model.mdl ]; then
-        echo "Error: model.mdl is missing or empty at destination"
-        ls -la /opt/render/project/src/model/
-        exit 1
-      fi
-      
-      if [ ! -s /opt/render/project/src/words.txt ]; then
-        echo "Error: words.txt is missing or empty at destination"
-        ls -la /opt/render/project/src/
+      if [ ! -s /opt/render/project/src/model/model_small.bin ]; then
+        echo "Error: model_small.bin is missing or empty"
         exit 1
       fi
       
       echo "Model files copied successfully"
-      echo "Final directory structure:"
-      ls -R /opt/render/project/src/
-    startCommand: gunicorn server:app
+    startCommand: gunicorn wsgi:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -64,7 +37,7 @@ services:
       - key: PORT
         value: 10000
       - key: MODEL_PATH
-        value: /opt/render/project/src/model/model.mdl
+        value: /opt/render/project/src/model/model_small
       - key: WORDS_PATH
         value: /opt/render/project/src/words.txt
     disk:
