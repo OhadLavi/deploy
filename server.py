@@ -167,20 +167,30 @@ def get_casual_secret(session_id):
     """Get or create a casual secret word for the given session ID."""
     cleanup_old_sessions()  # Cleanup old sessions
     
+    if not session_id:
+        app.logger.error("Attempted to get casual secret with empty session ID")
+        raise ValueError("Session ID is required")
+    
     if session_id not in casual_secrets:
-        casual_secrets[session_id] = (random.choice(hebrew_vocab), datetime.datetime.now())
-        app.logger.info(f"Created new casual secret for session {session_id}: {casual_secrets[session_id][0]}")
+        new_secret = random.choice(hebrew_vocab)
+        casual_secrets[session_id] = (new_secret, datetime.datetime.now())
+        app.logger.info(f"Created new casual secret for session {session_id}: {new_secret}")
     else:
-        # Update timestamp
+        # Update timestamp and keep existing word
         word, _ = casual_secrets[session_id]
         casual_secrets[session_id] = (word, datetime.datetime.now())
+        app.logger.info(f"Retrieved existing casual secret for session {session_id}: {word}")
     
     return casual_secrets[session_id][0]
 
 def clear_casual_secret(session_id):
     """Clear a casual secret for the given session ID."""
     if session_id in casual_secrets:
+        word = casual_secrets[session_id][0]
         del casual_secrets[session_id]
+        app.logger.info(f"Cleared casual secret for session {session_id}: {word}")
+        return True
+    return False
 
 # Add a global dictionary to store pre-calculated top words for each secret
 top_words_cache = {}
