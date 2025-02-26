@@ -97,21 +97,16 @@ try:
         raise ValueError(f"Words file not found at {words_path}")
     
     try:
-        # Try loading as gensim model first
-        model = gensim.models.KeyedVectors.load(model_path)
-        app.logger.info("Loaded model in gensim format")
-    except Exception as e1:
-        app.logger.warning(f"Failed to load as gensim model: {e1}")
-        try:
-            # Try loading as word2vec format
-            model = gensim.models.KeyedVectors.load_word2vec_format(
-                model_path,
-                binary=True
-            )
-            app.logger.info("Loaded model in binary format")
-        except Exception as e2:
-            app.logger.error(f"Failed to load model in any format: {e1}, {e2}")
-            raise ValueError(f"Could not load model from {model_path}")
+        # Load as binary word2vec format
+        model = gensim.models.KeyedVectors.load_word2vec_format(
+            model_path,
+            binary=True,
+            unicode_errors='ignore'
+        )
+        app.logger.info("Loaded model in binary format")
+    except Exception as e:
+        app.logger.error(f"Failed to load model: {e}")
+        raise ValueError(f"Could not load model from {model_path}: {e}")
     
     # Load Hebrew words
     hebrew_words = load_words()
