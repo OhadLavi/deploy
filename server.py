@@ -73,27 +73,47 @@ def load_words():
 
 # Load the word2vec model
 try:
-    model_path = os.getenv('MODEL_PATH', 'model/model.bin')
-    words_path = os.getenv('WORDS_PATH', 'words.txt')
+    # Get absolute paths from environment or use defaults
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.getenv('MODEL_PATH', os.path.join(base_path, 'model', 'model.mdl'))
+    words_path = os.getenv('WORDS_PATH', os.path.join(base_path, 'words.txt'))
     
+    app.logger.info(f"Base path: {base_path}")
     app.logger.info(f"Loading model from {model_path}")
     app.logger.info(f"Loading words from {words_path}")
     
+    # Check if files exist
+    if not os.path.exists(model_path):
+        app.logger.error(f"Model file not found at {model_path}")
+        app.logger.info(f"Directory contents of {os.path.dirname(model_path)}:")
+        try:
+            app.logger.info(str(os.listdir(os.path.dirname(model_path))))
+        except Exception as e:
+            app.logger.error(f"Could not list directory: {e}")
+        raise ValueError(f"Model file not found at {model_path}")
+        
+    if not os.path.exists(words_path):
+        app.logger.error(f"Words file not found at {words_path}")
+        raise ValueError(f"Words file not found at {words_path}")
+    
     try:
-        # Try loading as binary model first
-        model = gensim.models.KeyedVectors.load_word2vec_format(
-            model_path,
-            binary=True
-        )
-        app.logger.info("Loaded model in binary format")
-    except Exception as e:
-        app.logger.error(f"Failed to load model: {e}")
-        raise ValueError(f"Could not load model from {model_path}")
+        # Try loading as gensim model first
+        model = gensim.models.KeyedVectors.load(model_path)
+        app.logger.info("Loaded model in gensim format")
+    except Exception as e1:
+        app.logger.warning(f"Failed to load as gensim model: {e1}")
+        try:
+            # Try loading as word2vec format
+            model = gensim.models.KeyedVectors.load_word2vec_format(
+                model_path,
+                binary=True
+            )
+            app.logger.info("Loaded model in binary format")
+        except Exception as e2:
+            app.logger.error(f"Failed to load model in any format: {e1}, {e2}")
+            raise ValueError(f"Could not load model from {model_path}")
     
     # Load Hebrew words
-    if not os.path.exists(words_path):
-        raise ValueError(f"Words file not found at {words_path}")
-        
     hebrew_words = load_words()
     app.logger.info(f"Loaded {len(hebrew_words)} Hebrew words from file")
     
