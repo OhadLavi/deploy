@@ -9,12 +9,12 @@ services:
       
       # Copy the model files
       echo "Copying model files..."
-      cp -v model.mdl /opt/render/project/src/model/
-      cp -v words.txt /opt/render/project/src/
+      cp -v model.bin /opt/render/project/src/model/model.bin
+      cp -v words.txt /opt/render/project/src/words.txt
       
       # Verify files exist and have size
-      if [ ! -s /opt/render/project/src/model/model.mdl ]; then
-        echo "Error: model.mdl is missing or empty"
+      if [ ! -s /opt/render/project/src/model/model.bin ]; then
+        echo "Error: model.bin is missing or empty"
         exit 1
       fi
       
@@ -43,7 +43,7 @@ services:
       - key: PORT
         value: 10000
       - key: MODEL_PATH
-        value: /opt/render/project/src/model/model
+        value: /opt/render/project/src/model/model.bin
       - key: WORDS_PATH
         value: /opt/render/project/src/words.txt
     disk:

@@ -71,34 +71,29 @@ def load_words():
         app.logger.error(f"Error loading words from file: {e}")
         return []
 
-# Load the Word2Vec model and filter Hebrew words
+# Load the word2vec model
 try:
-    # Try to load the binary model first
-    model_path = app.config['MODEL_PATH']
-    app.logger.info(f"Attempting to load model from {model_path}")
+    model_path = os.getenv('MODEL_PATH', 'model/model.bin')
+    words_path = os.getenv('WORDS_PATH', 'words.txt')
+    
+    app.logger.info(f"Loading model from {model_path}")
+    app.logger.info(f"Loading words from {words_path}")
     
     try:
-        # Try loading as binary format
+        # Try loading as binary model first
         model = gensim.models.KeyedVectors.load_word2vec_format(
-            f"{model_path}.bin",
+            model_path,
             binary=True
         )
         app.logger.info("Loaded model in binary format")
     except Exception as e:
-        app.logger.warning(f"Failed to load binary model: {e}")
-        try:
-            # Try loading as regular model
-            model = gensim.models.KeyedVectors.load(model_path)
-            app.logger.info("Loaded model in regular format")
-        except Exception as e2:
-            app.logger.warning(f"Failed to load regular model: {e2}")
-            # Try loading as word2vec text format
-            model = gensim.models.KeyedVectors.load_word2vec_format(
-                f"{model_path}.txt",
-                binary=False
-            )
-            app.logger.info("Loaded model in text format")
+        app.logger.error(f"Failed to load model: {e}")
+        raise ValueError(f"Could not load model from {model_path}")
     
+    # Load Hebrew words
+    if not os.path.exists(words_path):
+        raise ValueError(f"Words file not found at {words_path}")
+        
     hebrew_words = load_words()
     app.logger.info(f"Loaded {len(hebrew_words)} Hebrew words from file")
     
@@ -109,7 +104,7 @@ try:
         raise ValueError("No Hebrew words found in both file and model vocabulary")
 except Exception as e:
     app.logger.error(f"Error loading model or filtering Hebrew words: {e}")
-    exit(1)
+    raise  # Re-raise to prevent server from starting with invalid state
 
 @app.route("/health")
 @limiter.exempt
