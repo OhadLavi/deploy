@@ -9,16 +9,22 @@ services:
       
       # Copy the model files
       echo "Copying model files..."
-      cp -v model/model_small.bin /opt/render/project/src/model/
+      cp -v model.mdl /opt/render/project/src/model/
+      cp -v words.txt /opt/render/project/src/
       
       # Verify files exist and have size
-      if [ ! -s /opt/render/project/src/model/model_small.bin ]; then
-        echo "Error: model_small.bin is missing or empty"
+      if [ ! -s /opt/render/project/src/model/model.mdl ]; then
+        echo "Error: model.mdl is missing or empty"
+        exit 1
+      fi
+      
+      if [ ! -s /opt/render/project/src/words.txt ]; then
+        echo "Error: words.txt is missing or empty"
         exit 1
       fi
       
       echo "Model files copied successfully"
-    startCommand: gunicorn wsgi:app
+    startCommand: gunicorn server:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -37,7 +43,7 @@ services:
       - key: PORT
         value: 10000
       - key: MODEL_PATH
-        value: /opt/render/project/src/model/model_small
+        value: /opt/render/project/src/model/model
       - key: WORDS_PATH
         value: /opt/render/project/src/words.txt
     disk:

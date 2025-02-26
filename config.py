@@ -4,8 +4,7 @@ from datetime import timedelta
 class BaseConfig:
     # Base configuration
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
-    MODEL_PATH = os.path.join('/opt/render/project/src/model', 'model_small')
-    WORDS_PATH = os.path.join(os.path.dirname(__file__), 'words.txt')
+    WORDS_PATH = os.environ.get('WORDS_PATH', os.path.join(os.path.dirname(__file__), 'words.txt'))
     
     # Rate limiting
     RATELIMIT_DEFAULT = "100 per minute"
@@ -23,10 +22,12 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
     CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:8080']
+    MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(os.path.dirname(__file__), 'model'))
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
     SSL_REDIRECT = True
+    MODEL_PATH = os.environ.get('MODEL_PATH', '/opt/render/project/src/model/model')
     CORS_ORIGINS = [
         os.environ.get('ALLOWED_ORIGIN', 'https://your-domain.com'),
         'http://localhost:8080',  # Temporarily allow localhost for testing
@@ -40,6 +41,7 @@ class ProductionConfig(BaseConfig):
 class TestingConfig(BaseConfig):
     TESTING = True
     CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:8080']
+    MODEL_PATH = os.environ.get('MODEL_PATH', os.path.join(os.path.dirname(__file__), 'model'))
 
 config = {
     'development': DevelopmentConfig,
